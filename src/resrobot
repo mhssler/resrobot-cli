@@ -1,0 +1,486 @@
+#!/usr/bin/env bash
+# Copyright (c) 2026 Martin Hässler
+# SPDX-License-Identifier: MIT
+set -euo pipefail
+
+# --- Constants ---
+API_BASE="https://api.resrobot.se/v2.1"
+DEFAULT_LANG="sv"
+DEFAULT_MAX=10
+
+# --- Helpers ---
+
+check_deps() {
+    local cmd
+    for cmd in curl jq; do
+        command -v "$cmd" >/dev/null 2>&1 ||
+        { echo "Error: $cmd is required but not found" >&2; return 1; }
+    done
+}
+
+check_api_key() {
+    [[ -n "${RESROBOT_KEY:-}" ]] ||
+        { echo "Error: RESROBOT_KEY not set. Get a free key at trafiklab.se" >&2; return 1; }
+}
+
+url_encode() {
+    printf '%s' "$1" | jq -sRr @uri
+}
+
+api_get() {
+    local endpoint="$1"; shift
+    local url="${API_BASE}${endpoint}?"
+    url+="accessId=$(url_encode "$RESROBOT_KEY")&"
+    url+="format=json&"
+    url+="lang=${DEFAULT_LANG}"
+
+    while [[ $# -gt 0 ]]; do
+        url="${url}&${1}=$(url_encode "$2")"
+        shift 2
+    done
+
+    local tmpfile
+    tmpfile=$(mktemp)
+    trap "rm -f '$tmpfile'" RETURN
+
+    local http_code
+    http_code=$(curl -s -o "$tmpfile" -w '%{http_code}' "$url") ||
+        { echo "Error: Network request failed" >&2; return 1; }
+
+    if [[ "$http_code" -ne 200 ]]; then
+        echo "Error: API returned HTTP $http_code" >&2
+        return 1
+    fi
+
+    local error_text
+    error_text=$(jq -r '.errorText // empty' < "$tmpfile" 2>/dev/null)
+    if [[ -n "$error_text" ]]; then
+        echo "Error: $error_text" >&2
+        return 1
+    fi
+
+    cat "$tmpfile"
+}
+
+resolve_stop() {
+    local input="$1"
+    if [[ "$input" =~ ^[0-9]{9}$ ]]; then
+        echo "$input"
+        return 0
+    fi
+    local json
+    json=$(api_get "/location.name" "input" "$input" "maxNo" "1") || return 1
+    local ext_id
+    ext_id=$(echo "$json" | jq -r '.stopLocationOrCoordLocation[0].StopLocation.extId // empty')
+    if [[ -z "$ext_id" ]]; then
+        echo "Error: No stops found for \"$input\"" >&2
+        return 1
+    fi
+    echo "$ext_id"
+}
+
+# Resolve stop name/ID or address → "stop:ID" or "coord:LAT:LON"
+resolve_location() {
+    local input="$1"
+    if [[ "$input" =~ ^[0-9]{9}$ ]]; then
+        echo "stop:$input"
+        return 0
+    fi
+    local json
+    json=$(api_get "/location.name" "input" "$input" "maxNo" "1") || return 1
+    local ext_id
+    ext_id=$(echo "$json" | jq -r '.stopLocationOrCoordLocation[0].StopLocation.extId // empty')
+    if [[ -n "$ext_id" ]]; then
+        echo "stop:$ext_id"
+        return 0
+    fi
+    # No stop match — try address resolution (with ambiguity check)
+    local coord
+    coord=$(resolve_address "$input") || return 1
+    echo "coord:$coord"
+}
+
+# Resolve an address to "LAT:LON" via Nominatim (OpenStreetMap) geocoding
+resolve_address() {
+    local input="$1"
+    local encoded
+    encoded=$(url_encode "$input")
+    local json
+    json=$(curl -s "https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&countrycodes=se&limit=1" \
+                -H "User-Agent: resrobot-cli/1.0") ||
+                    { echo "Error: Geocoding request failed" >&2; return 1; }
+    local lat lon
+    lat=$(echo "$json" | jq -r '.[0].lat // empty')
+    lon=$(echo "$json" | jq -r '.[0].lon // empty')
+    if [[ -z "$lat" ]]; then
+        echo "Error: No address found for \"$input\"" >&2
+        return 1
+    fi
+    local display
+    display=$(echo "$json" | jq -r '.[0].display_name' | cut -d, -f1-3)
+    echo "Resolved: $display" >&2
+    echo "$lat:$lon"
+}
+
+# --- Commands ---
+
+cmd_search() {
+    local max="$DEFAULT_MAX" json_mode=false name=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --max)
+                max="$2"
+                shift 2 ;;
+            --json)
+                json_mode=true
+                shift ;;
+            -*)
+                echo "Error: Unknown option $1" >&2
+                return 1 ;;
+            *)
+                name="$1"
+                shift ;;
+        esac
+    done
+    [[ -n "$name" ]] ||
+        { echo "Usage: resrobot search <name> [--max <n>] [--json]" >&2; return 1; }
+
+    local result
+    result=$(api_get "/location.name" "input" "$name" "maxNo" "$max") || return 1
+
+    if $json_mode; then
+        echo "$result"
+        return 0
+    fi
+
+    local count
+    count=$(echo "$result" | jq '[.stopLocationOrCoordLocation[] | select(.StopLocation or .CoordLocation)] | length')
+    if [[ "$count" -eq 0 ]]; then
+        echo "No results found for \"$name\""
+        return 0
+    fi
+
+    local jq_filter
+    read -r -d '' jq_filter <<'JQ' || true
+.stopLocationOrCoordLocation[] |
+  if .StopLocation then
+    .StopLocation |
+    "\(.extId)  \(.name)  (\(.lat), \(.lon))"
+  elif .CoordLocation then
+    .CoordLocation |
+    "ADR    \(.name)  (\(.lat), \(.lon))"
+  else empty end
+JQ
+    echo "$result" | jq -r "$jq_filter"
+}
+
+cmd_nearby() {
+    local radius=1000
+    local max="$DEFAULT_MAX"
+    local json_mode=false
+    local lat="" lon=""
+    local addr=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --radius)
+                radius="$2"; shift 2 ;;
+            --max)
+                max="$2"; shift 2 ;;
+            --json)
+                json_mode=true; shift ;;
+            --help)
+                echo "Usage: resrobot nearby <lat> <lon> [--radius <m>] [--max <n>] [--json]"
+                echo "       resrobot nearby <address> [--radius <m>] [--max <n>] [--json]"
+                echo "Note: Coordinates can be sensitive personal data under GDPR."
+                echo "      Use HTTPS and do not log them."
+                return 0 ;;
+            -*)
+                echo "Error: Unknown option $1" >&2; return 1 ;;
+            *)
+                if [[ -z "$lat" && "$1" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
+                    lat="$1"
+                elif [[ -n "$lat" && -z "$lon" && "$1" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
+                    lon="$1"
+                else
+                    addr="${addr:+$addr }$1"
+                fi
+                shift ;;
+        esac
+    done
+
+    # If we got an address instead of coordinates, resolve it
+    if [[ -n "$addr" && -z "$lat" ]]; then
+        local coord
+        coord=$(resolve_address "$addr") || return 1
+        lat="${coord%%:*}"
+        lon="${coord#*:}"
+    fi
+
+    [[ -n "$lat" && -n "$lon" ]] || { echo "Usage: resrobot nearby <lat> <lon> | <address> [--radius <m>] [--max <n>] [--json]" >&2; return 1; }
+
+    local result
+    result=$(api_get "/location.nearbystops" "originCoordLat" "$lat" "originCoordLong" "$lon" "r" "$radius" "maxNo" "$max") || return 1
+
+    if $json_mode; then
+        echo "$result"
+        return 0
+    fi
+
+    local count
+    count=$(echo "$result" | jq '[.stopLocationOrCoordLocation // [] | .[] | select(.StopLocation)] | length')
+    if [[ "$count" -eq 0 ]]; then
+        echo "No stops found nearby"
+        return 0
+    fi
+
+    echo "$result" | jq -r '.stopLocationOrCoordLocation // [] | .[] | select(.StopLocation) | .StopLocation | "\(.extId)  \(.name)  \(.dist // "-")m"'
+}
+
+cmd_departures() {
+    local date="" time="" lines="$DEFAULT_MAX" json_mode=false stop=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --date)
+                date="$2"
+                shift 2 ;;
+            --time)
+                time="$2"
+                shift 2 ;;
+            --lines) lines="$2"
+                shift 2 ;;
+            --json)
+                json_mode=true
+                shift ;;
+            -*)
+                echo "Error: Unknown option $1" >&2
+                return 1 ;;
+            *)
+                stop="$1"
+                shift ;;
+        esac
+    done
+    [[ -n "$stop" ]] || { echo "Usage: resrobot departures <stop> [--date YYYY-MM-DD] [--time HH:MM] [--lines <n>] [--json]" >&2; return 1; }
+
+    local stop_id
+    stop_id=$(resolve_stop "$stop") || return 1
+
+    local -a params=("id" "$stop_id" "maxJourneys" "$lines")
+    [[ -n "$date" ]] && params+=("date" "$date")
+    [[ -n "$time" ]] && params+=("time" "$time")
+
+    local result
+    result=$(api_get "/departureBoard" "${params[@]}") || return 1
+
+    if $json_mode; then
+        echo "$result"
+        return 0
+    fi
+
+    local count
+    count=$(echo "$result" | jq '.Departure | length')
+    if [[ "$count" -eq 0 ]]; then
+        echo "No departures found"
+        return 0
+    fi
+
+    echo "$result" | jq -r '.Departure[] | "\(.time[:5])  \(.name)  → \(.direction)"'
+}
+
+cmd_arrivals() {
+    local date="" time="" lines="$DEFAULT_MAX" json_mode=false stop=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --date)
+                date="$2"
+                shift 2 ;;
+            --time)
+                time="$2"
+                shift 2 ;;
+            --lines)
+                lines="$2"
+                shift 2 ;;
+            --json)
+                json_mode=true
+                shift ;;
+            -*)
+                echo "Error: Unknown option $1" >&2
+                return 1 ;;
+            *)
+                stop="$1"
+                shift ;;
+        esac
+    done
+    [[ -n "$stop" ]] ||
+        { echo "Usage: resrobot arrivals <stop> [--date YYYY-MM-DD] [--time HH:MM] [--lines <n>] [--json]" >&2; return 1; }
+
+    local stop_id
+    stop_id=$(resolve_stop "$stop") || return 1
+
+    local -a params=("id" "$stop_id" "maxJourneys" "$lines")
+    [[ -n "$date" ]] && params+=("date" "$date")
+    [[ -n "$time" ]] && params+=("time" "$time")
+
+    local result
+    result=$(api_get "/arrivalBoard" "${params[@]}") || return 1
+
+    if $json_mode; then
+        echo "$result"
+        return 0
+    fi
+
+    local count
+    count=$(echo "$result" | jq '.Arrival | length')
+    if [[ "$count" -eq 0 ]]; then
+        echo "No arrivals found"
+        return 0
+    fi
+
+    echo "$result" | jq -r '.Arrival[] | "\(.time[:5])  \(.name)  ← \(.origin // .direction // "")"'
+}
+
+cmd_trip() {
+    local date="" time="" results=5 json_mode=false origin="" dest=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --date)
+                date="$2"
+                shift 2 ;;
+            --time)
+                time="$2"
+                shift 2 ;;
+            --results)
+                results="$2"
+                shift 2 ;;
+            --json)
+                json_mode=true
+                shift ;;
+            -*)
+                echo "Error: Unknown option $1" >&2; return 1 ;;
+            *)
+                if [[ -z "$origin" ]]; then
+                    origin="$1"
+                elif [[ -z "$dest" ]]; then
+                    dest="$1";
+                fi
+                shift ;;
+        esac
+    done
+    [[ -n "$origin" && -n "$dest" ]] ||
+        { echo "Usage: resrobot trip <origin> <destination> [--date YYYY-MM-DD] [--time HH:MM] [--results <n>] [--json]" >&2; return 1; }
+
+    local origin_loc dest_loc
+    origin_loc=$(resolve_location "$origin") || return 1
+    dest_loc=$(resolve_location "$dest") || return 1
+
+    local -a params=()
+    if [[ "$origin_loc" == stop:* ]]; then
+        params+=("originId" "${origin_loc#stop:}")
+    else
+        local ocoord="${origin_loc#coord:}"
+        params+=("originCoordLat" "${ocoord%%:*}" "originCoordLong" "${ocoord#*:}")
+    fi
+    if [[ "$dest_loc" == stop:* ]]; then
+        params+=("destId" "${dest_loc#stop:}")
+    else
+        local dcoord="${dest_loc#coord:}"
+        params+=("destCoordLat" "${dcoord%%:*}" "destCoordLong" "${dcoord#*:}")
+    fi
+    params+=("numF" "$results")
+    [[ -n "$date" ]] && params+=("date" "$date")
+    [[ -n "$time" ]] && params+=("time" "$time")
+
+    local result
+    result=$(api_get "/trip" "${params[@]}") || return 1
+
+    if $json_mode; then
+        echo "$result"
+        return 0
+    fi
+
+    local count
+    count=$(echo "$result" | jq '.Trip | length')
+    if [[ "$count" -eq 0 ]]; then
+        echo "No trips found"
+        return 0
+    fi
+
+    local jq_filter
+    read -r -d '' jq_filter <<'JQ' || true
+.Trip[] |
+  (.idx + 1) as $n |
+  (.duration | gsub("PT";"") | gsub("H";"h ") | gsub("M";"min")) as $dur |
+  (.LegList.Leg | length - 1) as $transfers |
+  "Trip \($n): \($dur), \($transfers) transfer(s)",
+  (.LegList.Leg[] |
+    .Origin.time[:5] as $dep |
+    .Destination.time[:5] as $arr |
+    "  \($dep)–\($arr)  \(.name)  \(.Origin.name) → \(.Destination.name)"
+  ),
+  ""
+JQ
+    echo "$result" | jq -r "$jq_filter"
+}
+
+cmd_help() {
+    local cmd="${1:-}"
+    case "$cmd" in
+        search)
+            echo "Usage: resrobot search <name> [--max <n>] [--json]"
+            echo "Search for stops by name." ;;
+        nearby)
+            echo "Usage: resrobot nearby <lat> <lon> [--radius <m>] [--max <n>] [--json]"
+            echo "       resrobot nearby <address> [--radius <m>] [--max <n>] [--json]"
+            echo "Find stops near coordinates or an address."
+            echo "Note: Coordinates are personal data under GDPR." ;;
+        departures)
+            echo "Usage: resrobot departures <stop> [--date YYYY-MM-DD] [--time HH:MM] [--lines <n>] [--json]"
+            echo "Show departures from a stop (name or 9-digit ID)." ;;
+        arrivals)
+            echo "Usage: resrobot arrivals <stop> [--date YYYY-MM-DD] [--time HH:MM] [--lines <n>] [--json]"
+            echo "Show arrivals at a stop (name or 9-digit ID)." ;;
+        trip)
+            echo "Usage: resrobot trip <origin> <destination> [--date YYYY-MM-DD] [--time HH:MM] [--results <n>] [--json]"
+            echo "Plan a trip between two stops." ;;
+        "")
+            echo "resrobot — Swedish public transport CLI"
+            echo ""
+            echo "Commands:"
+            echo "  search <name>              Search for stops"
+            echo "  nearby <lat> <lon>         Find stops near coordinates"
+            echo "  departures <stop>          Show departures"
+            echo "  arrivals <stop>            Show arrivals"
+            echo "  trip <origin> <dest>       Plan a trip"
+            echo "  help [command]             Show help"
+            echo ""
+            echo "Use 'resrobot help <command>' for details." ;;
+        *)
+            echo "Error: Unknown command '$cmd'" >&2
+            cmd_help
+            return 1 ;;
+    esac
+}
+
+# --- Dispatch ---
+
+main() {
+    local cmd="${1:-}"
+    [[ -n "$cmd" ]] && shift
+
+    case "$cmd" in
+        help | "")
+            cmd_help "$@" ;;
+        search | nearby | departures | arrivals | trip)
+            check_deps
+            check_api_key
+            "cmd_$cmd" "$@" ;;
+        *)
+            echo "Error: Unknown command '$cmd'" >&2
+            cmd_help
+            return 1 ;;
+    esac
+}
+
+# Only run main if script is executed, not sourced
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

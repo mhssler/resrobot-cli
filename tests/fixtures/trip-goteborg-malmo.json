@@ -1,0 +1,58 @@
+{
+  "Trip": [
+    {
+      "Origin": {"name": "Göteborg Centralstation", "type": "ST", "extId": "740000002", "lon": 11.97339, "lat": 57.70887, "time": "15:25:00", "date": "2026-03-30"},
+      "Destination": {"name": "Malmö Centralstation", "type": "ST", "extId": "740000003", "lon": 13.000700, "lat": 55.609300, "time": "16:10:00", "date": "2026-03-30"},
+      "ServiceDays": [{"sDaysR": "daily", "sDaysI": "daily"}],
+      "LegList": {
+        "Leg": [
+          {
+            "Origin": {"name": "Göteborg Centralstation", "type": "ST", "extId": "740000002", "time": "15:25:00", "date": "2026-03-30"},
+            "Destination": {"name": "Malmö Centralstation", "type": "ST", "extId": "740000003", "time": "15:52:00", "date": "2026-03-30"},
+            "Product": [{"catOutS": "JRE", "name": "Regional Tåg 43", "num": "43"}],
+            "name": "Regional Tåg 43",
+            "type": "JNY",
+            "direction": "Malmö C",
+            "duration": "PT27M",
+            "idx": 0
+          },
+          {
+            "Origin": {"name": "Malmö Centralstation", "type": "ST", "extId": "740000003", "time": "16:00:00", "date": "2026-03-30"},
+            "Destination": {"name": "Kungsbacka station", "type": "ST", "extId": "740000668", "time": "16:10:00", "date": "2026-03-30"},
+            "Product": [{"catOutS": "BLT", "name": "Länstrafik - Buss 115", "num": "115"}],
+            "name": "Länstrafik - Buss 115",
+            "type": "JNY",
+            "direction": "Kungsbacka",
+            "duration": "PT10M",
+            "idx": 1
+          }
+        ]
+      },
+      "idx": 0,
+      "tripId": "C-0",
+      "duration": "PT45M"
+    },
+    {
+      "Origin": {"name": "Göteborg Centralstation", "type": "ST", "extId": "740000002", "lon": 11.97339, "lat": 57.70887, "time": "15:40:00", "date": "2026-03-30"},
+      "Destination": {"name": "Malmö Centralstation", "type": "ST", "extId": "740000003", "lon": 13.000700, "lat": 55.609300, "time": "16:38:00", "date": "2026-03-30"},
+      "ServiceDays": [{"sDaysR": "daily", "sDaysI": "daily"}],
+      "LegList": {
+        "Leg": [
+          {
+            "Origin": {"name": "Göteborg Centralstation", "type": "ST", "extId": "740000002", "time": "15:40:00", "date": "2026-03-30"},
+            "Destination": {"name": "Malmö Centralstation", "type": "ST", "extId": "740000003", "time": "16:38:00", "date": "2026-03-30"},
+            "Product": [{"catOutS": "BLT", "name": "Länstrafik - Buss 400", "num": "400"}],
+            "name": "Länstrafik - Buss 400",
+            "type": "JNY",
+            "direction": "Malmö C",
+            "duration": "PT58M",
+            "idx": 0
+          }
+        ]
+      },
+      "idx": 1,
+      "tripId": "C-1",
+      "duration": "PT58M"
+    }
+  ]
+}

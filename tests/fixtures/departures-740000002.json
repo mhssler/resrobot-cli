@@ -1,0 +1,49 @@
+{
+  "Departure": [
+    {
+      "Product": [{"catCode": "4", "catOutS": "BLT", "catOutL": "Länstrafik - Buss 16", "name": "Länstrafik - Buss 16", "num": "16", "operator": "Västtrafik", "operatorCode": "279"}],
+      "ProductAtStop": {"catCode": "4", "catOutS": "BLT", "catOutL": "Länstrafik - Buss 16", "name": "Länstrafik - Buss 16", "num": "16"},
+      "Stops": {"stop": []},
+      "name": "Länstrafik - Buss 16",
+      "type": "ST",
+      "stop": "Göteborg Centralstation",
+      "stopid": "A=1@O=Göteborg Centralstation@X=11973390@Y=57708870@u=0@U=80@L=740000002@",
+      "stopExtId": "740000002",
+      "time": "15:23:00",
+      "date": "2026-03-30",
+      "direction": "Eriksberg",
+      "transportNumber": "16",
+      "transportCategory": "BLT"
+    },
+    {
+      "Product": [{"catCode": "1", "catOutS": "JRE", "catOutL": "Regional Tåg 43", "name": "Regional Tåg 43", "num": "43", "operator": "SJ", "operatorCode": "074"}],
+      "ProductAtStop": {"catCode": "1", "catOutS": "JRE", "catOutL": "Regional Tåg 43", "name": "Regional Tåg 43", "num": "43"},
+      "Stops": {"stop": []},
+      "name": "Regional Tåg 43",
+      "type": "ST",
+      "stop": "Göteborg Centralstation",
+      "stopid": "A=1@O=Göteborg Centralstation@X=11973390@Y=57708870@u=0@U=80@L=740000002@",
+      "stopExtId": "740000002",
+      "time": "15:25:00",
+      "date": "2026-03-30",
+      "direction": "Malmö C",
+      "transportNumber": "43",
+      "transportCategory": "JRE"
+    },
+    {
+      "Product": [{"catCode": "4", "catOutS": "BLT", "catOutL": "Länstrafik - Buss 50", "name": "Länstrafik - Buss 50", "num": "50", "operator": "Västtrafik", "operatorCode": "279"}],
+      "ProductAtStop": {"catCode": "4", "catOutS": "BLT", "catOutL": "Länstrafik - Buss 50", "name": "Länstrafik - Buss 50", "num": "50"},
+      "Stops": {"stop": []},
+      "name": "Länstrafik - Buss 50",
+      "type": "ST",
+      "stop": "Göteborg Centralstation",
+      "stopid": "A=1@O=Göteborg Centralstation@X=11973390@Y=57708870@u=0@U=80@L=740000002@",
+      "stopExtId": "740000002",
+      "time": "15:31:00",
+      "date": "2026-03-30",
+      "direction": "Lindholmen",
+      "transportNumber": "50",
+      "transportCategory": "BLT"
+    }
+  ]
+}

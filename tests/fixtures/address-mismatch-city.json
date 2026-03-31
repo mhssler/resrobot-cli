@@ -1,0 +1,22 @@
+{
+  "stopLocationOrCoordLocation": [
+    {
+      "CoordLocation": {
+        "extId": "980002001",
+        "name": "Skomakarvägen 11, Skellefteå",
+        "type": "ADR",
+        "lon": 20.772444,
+        "lat": 64.747143
+      }
+    },
+    {
+      "CoordLocation": {
+        "extId": "980002002",
+        "name": "Grenadjärvägen 11, Skellefteå",
+        "type": "ADR",
+        "lon": 20.800000,
+        "lat": 64.750000
+      }
+    }
+  ]
+}

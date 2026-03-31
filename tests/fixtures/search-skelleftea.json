@@ -1,0 +1,14 @@
+{
+  "stopLocationOrCoordLocation": [
+    {
+      "StopLocation": {
+        "extId": "740000053",
+        "name": "Skellefteå busstation",
+        "lon": 20.9505,
+        "lat": 64.7507,
+        "weight": 5000,
+        "products": 128
+      }
+    }
+  ]
+}

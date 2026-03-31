@@ -1,0 +1,14 @@
+{
+  "stopLocationOrCoordLocation": [
+    {
+      "StopLocation": {
+        "extId": "740000001",
+        "name": "Stockholm Centralstation",
+        "lon": 18.0586,
+        "lat": 59.3301,
+        "weight": 9000,
+        "products": 254
+      }
+    }
+  ]
+}

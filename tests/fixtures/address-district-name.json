@@ -1,0 +1,31 @@
+{
+  "stopLocationOrCoordLocation": [
+    {
+      "CoordLocation": {
+        "extId": "980003001",
+        "name": "Testgatan 1, Kalmar",
+        "type": "ADR",
+        "lon": 16.3568,
+        "lat": 56.6634
+      }
+    },
+    {
+      "CoordLocation": {
+        "extId": "980003002",
+        "name": "Testgatan 1, Norrmalm",
+        "type": "ADR",
+        "lon": 18.0649,
+        "lat": 59.3345
+      }
+    },
+    {
+      "CoordLocation": {
+        "extId": "980003003",
+        "name": "Testgatan 1, Umeå",
+        "type": "ADR",
+        "lon": 20.2630,
+        "lat": 63.8258
+      }
+    }
+  ]
+}

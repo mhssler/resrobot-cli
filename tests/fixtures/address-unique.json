@@ -1,0 +1,22 @@
+{
+  "stopLocationOrCoordLocation": [
+    {
+      "CoordLocation": {
+        "extId": "980057917",
+        "name": "Jägarvägen 11, Finspång",
+        "type": "ADR",
+        "lon": 15.747753,
+        "lat": 58.701925
+      }
+    },
+    {
+      "CoordLocation": {
+        "extId": "980057920",
+        "name": "Grenadjärvägen 11, Finspång",
+        "type": "ADR",
+        "lon": 14.563676,
+        "lat": 59.343754
+      }
+    }
+  ]
+}

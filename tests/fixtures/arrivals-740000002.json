@@ -1,0 +1,34 @@
+{
+  "Arrival": [
+    {
+      "Product": [{"catCode": "1", "catOutS": "JRE", "catOutL": "Regional Tåg 21", "name": "Regional Tåg 21", "num": "21"}],
+      "ProductAtStop": {"catCode": "1", "catOutS": "JRE", "name": "Regional Tåg 21", "num": "21"},
+      "Stops": {"stop": []},
+      "name": "Regional Tåg 21",
+      "type": "ST",
+      "stop": "Göteborg Centralstation",
+      "stopid": "A=1@O=Göteborg Centralstation@X=11973390@Y=57708870@u=0@U=80@L=740000002@",
+      "stopExtId": "740000002",
+      "time": "15:18:00",
+      "date": "2026-03-30",
+      "direction": "Stockholm C",
+      "transportNumber": "21",
+      "transportCategory": "JRE"
+    },
+    {
+      "Product": [{"catCode": "4", "catOutS": "BLT", "catOutL": "Länstrafik - Buss 16", "name": "Länstrafik - Buss 16", "num": "16"}],
+      "ProductAtStop": {"catCode": "4", "catOutS": "BLT", "name": "Länstrafik - Buss 16", "num": "16"},
+      "Stops": {"stop": []},
+      "name": "Länstrafik - Buss 16",
+      "type": "ST",
+      "stop": "Göteborg Centralstation",
+      "stopid": "A=1@O=Göteborg Centralstation@X=11973390@Y=57708870@u=0@U=80@L=740000002@",
+      "stopExtId": "740000002",
+      "time": "15:22:00",
+      "date": "2026-03-30",
+      "direction": "Eriksberg",
+      "transportNumber": "16",
+      "transportCategory": "BLT"
+    }
+  ]
+}

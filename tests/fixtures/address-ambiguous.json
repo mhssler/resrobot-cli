@@ -1,0 +1,58 @@
+{
+  "stopLocationOrCoordLocation": [
+    {
+      "CoordLocation": {
+        "extId": "980057913",
+        "name": "Jägarvägen 11, Bergsviken",
+        "type": "ADR",
+        "lon": 21.389419,
+        "lat": 65.312214
+      }
+    },
+    {
+      "CoordLocation": {
+        "extId": "980057915",
+        "name": "Jägarvägen 11, Burträsk",
+        "type": "ADR",
+        "lon": 20.651278,
+        "lat": 64.51346
+      }
+    },
+    {
+      "CoordLocation": {
+        "extId": "980057916",
+        "name": "Jägarvägen 11, Centralorten",
+        "type": "ADR",
+        "lon": 20.961271,
+        "lat": 64.756951
+      }
+    },
+    {
+      "CoordLocation": {
+        "extId": "980057917",
+        "name": "Jägarvägen 11, Finspång",
+        "type": "ADR",
+        "lon": 15.747753,
+        "lat": 58.701925
+      }
+    },
+    {
+      "CoordLocation": {
+        "extId": "980057920",
+        "name": "Jägarvägen 11, Karlskoga",
+        "type": "ADR",
+        "lon": 14.563676,
+        "lat": 59.343754
+      }
+    },
+    {
+      "CoordLocation": {
+        "extId": "980057922",
+        "name": "Jägarvägen 11, Nacka",
+        "type": "ADR",
+        "lon": 18.161914,
+        "lat": 59.29808
+      }
+    }
+  ]
+}

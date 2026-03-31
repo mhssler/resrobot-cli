@@ -1,0 +1,26 @@
+{
+  "stopLocationOrCoordLocation": [
+    {
+      "StopLocation": {
+        "id": "A=1@O=Göteborg Centralstation@X=11973390@Y=57708870@u=0@U=80@L=740000002@",
+        "extId": "740000002",
+        "name": "Göteborg Centralstation",
+        "lon": 11.97339,
+        "lat": 57.70887,
+        "weight": 8500,
+        "products": 254
+      }
+    },
+    {
+      "StopLocation": {
+        "id": "A=1@O=Göteborg Korsvägen@X=11986700@Y=57696900@u=0@U=80@L=740025657@",
+        "extId": "740025657",
+        "name": "Göteborg Korsvägen",
+        "lon": 11.9867,
+        "lat": 57.6969,
+        "weight": 6200,
+        "products": 132
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "stopLocationOrCoordLocation": [
+    {
+      "CoordLocation": {
+        "extId": "980001001",
+        "name": "Flygaregatan 1, Malmö",
+        "type": "ADR",
+        "lon": 13.0038,
+        "lat": 55.6050
+      }
+    },
+    {
+      "CoordLocation": {
+        "extId": "980001002",
+        "name": "Flygaregatan 1, Motala",
+        "type": "ADR",
+        "lon": 15.0365,
+        "lat": 58.5370
+      }
+    }
+  ]
+}
