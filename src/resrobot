@@ -10,6 +10,11 @@ DEFAULT_MAX=10
 
 # --- Helpers ---
 
+# Strip non-printable control characters (except newline/tab) from output
+sanitize() {
+    tr -d '\000-\010\013\014\016-\037'
+}
+
 check_deps() {
     local cmd
     for cmd in curl jq; do
@@ -117,7 +122,7 @@ resolve_address() {
         return 1
     fi
     local display
-    display=$(echo "$json" | jq -r '.[0].display_name' | cut -d, -f1-3)
+    display=$(echo "$json" | jq -r '.[0].display_name[:200]' | cut -d, -f1-3 | sanitize)
     echo "Resolved: $display" >&2
     echo "$lat:$lon"
 }
@@ -165,13 +170,13 @@ cmd_search() {
 .stopLocationOrCoordLocation[] |
   if .StopLocation then
     .StopLocation |
-    "\(.extId)  \(.name)  (\(.lat), \(.lon))"
+    "\(.extId)  \(.name[:80])  (\(.lat), \(.lon))"
   elif .CoordLocation then
     .CoordLocation |
-    "ADR    \(.name)  (\(.lat), \(.lon))"
+    "ADR    \(.name[:80])  (\(.lat), \(.lon))"
   else empty end
 JQ
-    echo "$result" | jq -r "$jq_filter"
+    echo "$result" | jq -r "$jq_filter" | sanitize
 }
 
 cmd_nearby() {
@@ -233,7 +238,7 @@ cmd_nearby() {
         return 0
     fi
 
-    echo "$result" | jq -r '.stopLocationOrCoordLocation // [] | .[] | select(.StopLocation) | .StopLocation | "\(.extId)  \(.name)  \(.dist // "-")m"'
+    echo "$result" | jq -r '.stopLocationOrCoordLocation // [] | .[] | select(.StopLocation) | .StopLocation | "\(.extId)  \(.name[:80])  \(.dist // "-")m"' | sanitize
 }
 
 cmd_departures() {
@@ -283,7 +288,7 @@ cmd_departures() {
         return 0
     fi
 
-    echo "$result" | jq -r '.Departure[] | "\(.time[:5])  \(.name)  → \(.direction)"'
+    echo "$result" | jq -r '.Departure[] | "\(.time[:5])  \(.name[:80])  → \(.direction[:80])"' | sanitize
 }
 
 cmd_arrivals() {
@@ -335,7 +340,7 @@ cmd_arrivals() {
         return 0
     fi
 
-    echo "$result" | jq -r '.Arrival[] | "\(.time[:5])  \(.name)  ← \(.origin // .direction // "")"'
+    echo "$result" | jq -r '.Arrival[] | "\(.time[:5])  \(.name[:80])  ← \((.origin // .direction // "")[:80])"' | sanitize
 }
 
 cmd_trip() {
@@ -414,11 +419,11 @@ cmd_trip() {
   (.LegList.Leg[] |
     .Origin.time[:5] as $dep |
     .Destination.time[:5] as $arr |
-    "  \($dep)–\($arr)  \(.name)  \(.Origin.name) → \(.Destination.name)"
+    "  \($dep)–\($arr)  \(.name[:80])  \(.Origin.name[:80]) → \(.Destination.name[:80])"
   ),
   ""
 JQ
-    echo "$result" | jq -r "$jq_filter"
+    echo "$result" | jq -r "$jq_filter" | sanitize
 }
 
 cmd_help() {
