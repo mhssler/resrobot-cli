@@ -1,0 +1,17 @@
+{
+  "name": "resrobot-cli",
+  "owner": {
+    "name": "Martin Hässler"
+  },
+  "metadata": {
+    "description": "Swedish public transport schedules via the ResRobot API",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "resrobot-cli",
+      "source": ".",
+      "description": "Query Swedish public transport departures, arrivals, and routes"
+    }
+  ]
+}
