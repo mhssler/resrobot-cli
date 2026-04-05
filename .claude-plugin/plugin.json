@@ -1,0 +1,7 @@
+{
+  "name": "resrobot-cli",
+  "version": "1.0.0",
+  "description": "Swedish public transport schedules via the ResRobot API",
+  "skills": "../",
+  "license": "MIT"
+}

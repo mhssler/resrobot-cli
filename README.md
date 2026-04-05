@@ -23,7 +23,19 @@ resrobot trip "Kungsgatan 12, Malmö" "Lund Centralstation"
 ## Agent skill
 
 `SKILL.md` teaches AI coding agents when and how to use the CLI.
-Install it according to your agent's skill/tool documentation.
+Works with Claude Code, Kiro, GitHub Copilot, and other agents
+supporting the [Agent Skills](https://agentskills.io/) open standard.
+
+### Claude Code plugin
+
+```bash
+/plugin marketplace add mhssler/resrobot-cli
+/plugin install resrobot-cli@resrobot-cli
+```
+
+### Manual install
+
+Copy `SKILL.md` to your agent's skills directory (e.g. `~/.claude/skills/resrobot-cli/`).
 
 ## Commands
 
