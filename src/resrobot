@@ -28,6 +28,13 @@ check_api_key() {
         { echo "Error: RESROBOT_KEY not set. Get a free key at trafiklab.se" >&2; return 1; }
 }
 
+run_jq() {
+    local input="$1"
+    local filter
+    read -r -d '' filter || true
+    echo "$input" | jq -r "$filter" | sanitize
+}
+
 url_encode() {
     printf '%s' "$1" | jq -sRr @uri
 }
@@ -165,8 +172,7 @@ cmd_search() {
         return 0
     fi
 
-    local jq_filter
-    read -r -d '' jq_filter <<'JQ' || true
+    run_jq "$result" <<'JQ'
 .stopLocationOrCoordLocation[] |
   if .StopLocation then
     .StopLocation |
@@ -176,7 +182,6 @@ cmd_search() {
     "ADR    \(.name[:80])  (\(.lat), \(.lon))"
   else empty end
 JQ
-    echo "$result" | jq -r "$jq_filter" | sanitize
 }
 
 cmd_nearby() {
@@ -238,7 +243,12 @@ cmd_nearby() {
         return 0
     fi
 
-    echo "$result" | jq -r '.stopLocationOrCoordLocation // [] | .[] | select(.StopLocation) | .StopLocation | "\(.extId)  \(.name[:80])  \(.dist // "-")m"' | sanitize
+    run_jq "$result" <<'JQ'
+.stopLocationOrCoordLocation // [] | .[] |
+  select(.StopLocation) |
+  .StopLocation |
+  "\(.extId)  \(.name[:80])  \(.dist // "-")m"
+JQ
 }
 
 cmd_departures() {
@@ -288,7 +298,10 @@ cmd_departures() {
         return 0
     fi
 
-    echo "$result" | jq -r '.Departure[] | "\(.time[:5])  \(.name[:80])  → \(.direction[:80])"' | sanitize
+    run_jq "$result" <<'JQ'
+.Departure[] |
+  "\(.time[:5])  \(.name[:80])  → \(.direction[:80])"
+JQ
 }
 
 cmd_arrivals() {
@@ -340,7 +353,10 @@ cmd_arrivals() {
         return 0
     fi
 
-    echo "$result" | jq -r '.Arrival[] | "\(.time[:5])  \(.name[:80])  ← \((.origin // .direction // "")[:80])"' | sanitize
+    run_jq "$result" <<'JQ'
+.Arrival[] |
+  "\(.time[:5])  \(.name[:80])  ← \((.origin // .direction // "")[:80])"
+JQ
 }
 
 cmd_trip() {
@@ -409,8 +425,7 @@ cmd_trip() {
         return 0
     fi
 
-    local jq_filter
-    read -r -d '' jq_filter <<'JQ' || true
+    run_jq "$result" <<'JQ'
 .Trip[] |
   (.idx + 1) as $n |
   (.duration | gsub("PT";"") | gsub("H";"h ") | gsub("M";"min")) as $dur |
@@ -423,7 +438,6 @@ cmd_trip() {
   ),
   ""
 JQ
-    echo "$result" | jq -r "$jq_filter" | sanitize
 }
 
 cmd_help() {
